@@ -483,6 +483,20 @@ const Customers = () => {
         dataSource={dataUserName}
         // onChange={onChange}
         rowKey="id"
+        rowClassName={(record) => {
+          switch (record.status) {
+            case "active":
+              return "bg-green-100";
+            case "inactive":
+              return "bg-gray-100";
+            case "pending":
+              return "bg-yellow-100";
+            case "suspended":
+              return "bg-red-100";
+            default:
+              return "";
+          }
+        }}
         showSorterTooltip={{
           target: "sorter-icon",
         }}

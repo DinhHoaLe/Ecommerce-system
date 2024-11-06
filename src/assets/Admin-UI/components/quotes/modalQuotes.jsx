@@ -3,40 +3,112 @@ import { Modal, Table, Input, Select, Image } from "antd";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const ModalQuotes = ({ openModal, selected, dataQuotes, updatedQuotes }) => {
+const ModalQuotes = ({
+  openModal,
+  selected,
+  token,
+  setToken,
+  setCookie,
+  callRefreshToken,
+  callApi,
+}) => {
   const [newStatus, setNewStatus] = useState(selected.status);
-  const [newReply, setNewReply] = useState(selected.reply);
-  const [quotes, setQuotes] = useState();
-
+  const [note, setNote] = useState(selected.reply.note);
   const handleCancel = () => {
     openModal(false);
   };
 
-  const handleOk = () => {
-    const newData = dataQuotes.map((item) => {
-      if (selected.id === item.id) {
-        return {
-          ...item,
-          status: newStatus,
-          reply: newReply,
-        };
+  const handleOk = async () => {
+    try {
+      const req1 = await fetch(
+        `http://localhost:8080/api/v1/support/${selected._id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            note: note,
+            status: newStatus,
+          }),
+        }
+      );
+      if (req1.status === 403) {
+        const newToken = await callRefreshToken(token);
+        if (!newToken) throw new Error("Please log in again!");
+        setToken(newToken);
+        setCookie(newToken);
+        const req2 = await fetch(
+          `http://localhost:8080/api/v1/support/${selected._id}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              authorization: `Bearer ${newToken}`,
+            },
+            body: JSON.stringify({
+              note: note,
+              status: newStatus,
+            }),
+          }
+        );
+        if (req2.status === 200) {
+          toast.success("Updated successful!", {
+            position: "top-center",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+            onClose: () => openModal(false),
+          });
+          callApi();
+        } else {
+          const res2 = await req2.json();
+          toast.warn(res2.message, {
+            position: "top-center",
+            autoClose: 1500,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+          });
+        }
       }
-      return item;
-    });
-    console.log(newData);
-    setQuotes(newData);
-    updatedQuotes(newData);
-    toast.success("Updated successful!", {
-      position: "top-center",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: false,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
-      onClose: () => openModal(false),
-    });
+      if (req1.status === 200) {
+        toast.success("Updated successful!", {
+          position: "top-center",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: false,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          onClose: () => openModal(false),
+        });
+        callApi();
+      } else {
+        const res1 = await req1.json();
+        toast.warn(res1.message, {
+          position: "top-center",
+          autoClose: 1500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const columns1 = [
@@ -44,49 +116,93 @@ const ModalQuotes = ({ openModal, selected, dataQuotes, updatedQuotes }) => {
       title: "ID",
       dataIndex: "id",
       key: "id",
-      render: () => selected.id,
+      width: 200,
+      render: () => selected._id,
     },
     {
-      title: "Author",
-      dataIndex: "author",
-      key: "author",
-      render: () => selected.author,
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      render: () => selected.name,
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      render: () => selected.email,
+    },
+    {
+      title: "Phone",
+      dataIndex: "phone",
+      key: "phone",
+      render: () => selected.phone,
     },
     {
       title: "Date Created",
       dataIndex: "dateCreate",
       key: "dateCreate",
       render: (text, record) => (
-        <div style={{ width: 100 }}>{record.dateCreate}</div>
-      ),
-    },
-    {
-      title: "Date Response",
-      dataIndex: "reply",
-      key: "reply",
-      render: (text, record) => (
-        <div style={{ width: 100 }}>{record.dateReply}</div>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      width: 200,
-      render: () => (
-        <Select
-          value={newStatus}
-          onChange={(value) => setNewStatus(value)}
-          style={{ width: "150px" }}
-        >
-          <Select.Option value="Active">Active</Select.Option>
-          <Select.Option value="Block">Block</Select.Option>
-        </Select>
+        <div style={{ width: 100 }}>{record.createdAt.slice(0, 10)}</div>
       ),
     },
   ];
 
   const columns2 = [
+    {
+      title: "Admin ID",
+      dataIndex: "id",
+      key: "id",
+      width: 200,
+      render: () => (selected.reply.adminId ? selected.reply.adminId._id : ""),
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      width: 200,
+      render: () =>
+        selected.reply.adminId ? selected.reply.adminId.email : "",
+    },
+    {
+      title: "Time Reply",
+      dataIndex: "time reply",
+      key: "time reply",
+      width: 150,
+      render: () =>
+        selected.reply.timeReply ? selected.reply.timeReply.slice(0, 10) : "",
+    },
+    {
+      title: "Note",
+      dataIndex: "note",
+      key: "note",
+      render: (text, record) => (
+        <Input.TextArea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      ),
+    },
+
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 100,
+      render: () => (
+        <Select
+          value={newStatus}
+          onChange={(value) => setNewStatus(value)}
+          style={{ width: "100px" }}
+        >
+          <Select.Option value="pending">pending</Select.Option>
+          <Select.Option value="approved">approved</Select.Option>
+          <Select.Option value="rejected">rejected</Select.Option>
+        </Select>
+      ),
+    },
+  ];
+
+  const columns3 = [
     {
       title: "Quotes",
       dataIndex: "quotes",
@@ -94,14 +210,10 @@ const ModalQuotes = ({ openModal, selected, dataQuotes, updatedQuotes }) => {
       // width: 250,
       render: (_, record, index) => {
         return index === 1 ? (
-          <Input.TextArea
-            value={newReply}
-            onChange={(e) => setNewReply(e.target.value)}
-          />
+          <Input.TextArea value={selected.reply.text} disabled />
         ) : (
           <div>
-            <div>{selected.quote}</div>
-            <input type="text" value={newReply} />
+            <Input.TextArea value={selected.message} disabled />
           </div>
         );
       },
@@ -116,7 +228,7 @@ const ModalQuotes = ({ openModal, selected, dataQuotes, updatedQuotes }) => {
   return (
     <div>
       <Modal
-        title="Order Information"
+        title="Quotes Information"
         open={true}
         onOk={handleOk}
         onCancel={handleCancel}
@@ -124,7 +236,7 @@ const ModalQuotes = ({ openModal, selected, dataQuotes, updatedQuotes }) => {
         bodyStyle={{ height: 600 }}
       >
         <div style={{ marginBottom: 16 }}>
-          <h3>Order Details</h3>
+          <h3>Quotes Details</h3>
           <Table
             columns={columns1}
             dataSource={[selected]}
@@ -134,28 +246,25 @@ const ModalQuotes = ({ openModal, selected, dataQuotes, updatedQuotes }) => {
           />
         </div>
         <div>
-          <h3>Products</h3>
+          <h3>Admin Details</h3>
           <Table
             columns={columns2}
+            dataSource={[selected]}
+            pagination={false}
+            rowKey="admin"
+          />
+        </div>
+        <div>
+          <h3>Mail Details</h3>
+          <Table
+            columns={columns3}
             dataSource={data}
             pagination={false}
-            rowKey="productId"
+            rowKey="mail"
           />
         </div>
       </Modal>
-      <ToastContainer
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick={false}
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        // transition: Bounce,
-      />
+      <ToastContainer />
     </div>
   );
 };

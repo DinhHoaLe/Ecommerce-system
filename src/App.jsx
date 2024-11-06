@@ -36,6 +36,11 @@ import ChangePassword from "./assets/Customer-UI/components/edit-page/ChangePass
 import MyOrder from "./assets/Customer-UI/components/edit-page/MyOrder";
 import MyPayment from "./assets/Customer-UI/components/edit-page/PaymentMethod";
 import Admin from "./assets/Admin-UI/components/admin/admin";
+import MyQuotes from "./assets/Customer-UI/components/edit-page/MyQuotes";
+import ContactUs from "./assets/Customer-UI/components/edit-page/ContactUs";
+import MyPurchaseHistory from "./assets/Customer-UI/components/edit-page/MyPurchaseHistory";
+import MyWishList from "./assets/Customer-UI/components/edit-page/MyWishList";
+import MySetting from "./assets/Customer-UI/components/edit-page/MySetting";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -102,6 +107,11 @@ function App() {
         { path: "my-password", element: <ChangePassword /> },
         { path: "my-order", element: <MyOrder /> },
         { path: "my-payment", element: <MyPayment /> },
+        { path: "contact-us", element: <ContactUs /> },
+        { path: "my-quotes", element: <MyQuotes /> },
+        { path: "my-purchase-history", element: <MyPurchaseHistory /> },
+        { path: "my-wishList", element: <MyWishList /> },
+        { path: "my-setting", element: <MySetting /> },
       ],
     },
     {

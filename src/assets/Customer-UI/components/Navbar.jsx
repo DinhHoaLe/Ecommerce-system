@@ -11,7 +11,7 @@ import TestImg from "../../Admin-UI/components/img/464112140_122128355468442990_
 import { ToastContainer, toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
 
-const Navbar = () => {
+const Navbar = ({ profile }) => {
   const { getWishlistCount } = useContext(WishlistContext);
   const wishlistCount = getWishlistCount();
   const [searchQuery, setSearchQuery] = useState("");
@@ -181,7 +181,7 @@ const Navbar = () => {
               >
                 <NavLink to="/profile">
                   <img
-                    src={TestImg}
+                    src={profile ? profile.avatar : TestImg}
                     alt="Account Icon"
                     className="h-6 w-6 cursor-pointer"
                   />

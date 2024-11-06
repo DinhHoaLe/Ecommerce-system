@@ -90,13 +90,16 @@ const Review = () => {
 
   const deleteReview = async (xxx) => {
     try {
-      const req1 = await fetch(`http://localhost:8080/api/v1/reviews/${xxx._id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${token}`,
-        },
-      });
+      const req1 = await fetch(
+        `http://localhost:8080/api/v1/reviews/${xxx._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (req1.status === 403) {
         const res2 = await callRefreshToken(token);
         setToken(res2);
@@ -276,7 +279,7 @@ const Review = () => {
       title: "Status Reply",
       dataIndex: "statusReply",
       key: "statusReply",
-      // width: 250,
+      width: 150,
       render: (_, record) => (
         <div>{record.reply.statusReply === true ? "Yes" : "No"}</div>
       ),
@@ -314,6 +317,18 @@ const Review = () => {
         rowKey="_id"
         scroll={{ x: true, y: 950 }}
         sticky
+        rowClassName={(record) => {
+          switch (record.status) {
+            case "active":
+              return;
+            case "block":
+              return "bg-gray-100";
+            case "pending":
+              return "bg-yellow-100";
+            default:
+              return "";
+          }
+        }}
       />
       {isModalOpen && (
         <ModalReview

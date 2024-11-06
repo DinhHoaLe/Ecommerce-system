@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { AdminProvider, useAdminContext } from "../../AdminContext";
 import Chart from "react-apexcharts";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer, toast } from "react-toastify";
@@ -9,6 +8,7 @@ const Analytics = () => {
   const [token, setToken] = useState("");
 
   const month = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+
   const getCookieValue = (name) => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -39,8 +39,7 @@ const Analytics = () => {
         }
       );
       const res = await req.json();
-      const newToken = res.accessToken;
-      return newToken;
+      return res.accessToken || null;
     } catch (err) {
       console.log("error", err);
       return null;
@@ -55,12 +54,6 @@ const Analytics = () => {
       toast.warn("Please log in first!", {
         position: "top-center",
         autoClose: 1500,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
       });
     }
   }, []);
@@ -71,21 +64,6 @@ const Analytics = () => {
     }
   }, [token]);
 
-  useEffect(() => {
-    if (dataOrder) {
-      const updatedMonth1 = dataOrder.map((item) => {
-        return { ...item, createdAt: item.createdAt.slice(5, 7) };
-      });
-
-      const updatedMonth2 = updatedMonth1.filter((item) => {
-        month.map((item2) => {
-          item2 === item.createdAt;
-        });
-      });
-      console.log(updatedMonth2);
-    }
-  }, [dataOrder]);
-
   const callApi = async () => {
     try {
       const req1 = await fetch("http://localhost:8080/api/v1/get-all-order", {
@@ -95,7 +73,7 @@ const Analytics = () => {
           authorization: `Bearer ${token}`,
         },
       });
-      if (req1.status == 403) {
+      if (req1.status === 403) {
         const req2 = await callRefreshToken(token);
         if (!req2) throw new Error("Please log in again!");
         setToken(req2);
@@ -104,15 +82,14 @@ const Analytics = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            authorization: `Bearer ${token}`,
+            authorization: `Bearer ${req2}`,
           },
         });
         if (req3.status === 200) {
           const res3 = await req3.json();
           setDataOrder(res3.data);
         }
-      }
-      if (req1.status === 200) {
+      } else if (req1.status === 200) {
         const res3 = await req1.json();
         setDataOrder(res3.data);
       }
@@ -121,92 +98,88 @@ const Analytics = () => {
     }
   };
 
-  // const [options1] = useState({
-  //   chart: {
-  //     id: "apexchart-example",
-  //   },
-  //   xaxis: {
-  //     categories: dataMonthChart,
-  //   },
-  // });
+  const monthlyRevenue = month.map((monthNum) => {
+    return dataOrder.reduce((acc, order) => {
+      const orderMonth = new Date(order.createdAt).getMonth() + 1;
+      return orderMonth === parseInt(monthNum) ? acc + order.amount : acc;
+    }, 0);
+  });
 
-  // const [series1] = useState([
-  //   {
-  //     name: "series-1",
-  //     data: dataForMonth,
-  //   },
-  // ]);
+  const dailyRevenue = dataOrder.reduce((acc, order) => {
+    const orderDate = new Date(order.createdAt);
+    const currentDate = new Date();
+    
+    if (
+      orderDate.getMonth() === currentDate.getMonth() &&
+      orderDate.getFullYear() === currentDate.getFullYear()
+    ) {
+      const formattedDate = orderDate.toISOString().split("T")[0];
+      acc[formattedDate] = (acc[formattedDate] || 0) + order.amount;
+    }
+    return acc;
+  }, {});
+  
 
-  // const [options2] = useState({
-  //   chart: {
-  //     id: "apexchart-example",
-  //   },
-  //   xaxis: {
-  //     categories: dayAndMonth,
-  //   },
-  // });
+  const productRevenue = dataOrder.reduce((acc, order) => {
+    const productId = order.productId._id;
+    acc[productId] = (acc[productId] || 0) + order.amount;
+    return acc;
+  }, {});
 
-  // const [series2] = useState([
-  //   {
-  //     name: "series-1",
-  //     data: totalBill,
-  //   },
-  // ]);
+  const productSales = dataOrder.reduce((acc, order) => {
+    const productId = order.productId._id;
+    acc[productId] = (acc[productId] || 0) + order.quantity;
+    return acc;
+  }, {});
 
-  // const [options3] = useState({
-  //   chart: {
-  //     id: "apexchart-example",
-  //   },
-  //   xaxis: {
-  //     categories: arrProduct,
-  //   },
-  // });
+  const options1 = {
+    chart: { id: "monthly-revenue-chart" },
+    xaxis: { categories: month },
+    yaxis: { min: 0, max: Math.max(...monthlyRevenue) + 50 },
+  };
+  const series1 = [{ name: "Doanh Thu", data: monthlyRevenue }];
 
-  // const [series3] = useState([
-  //   {
-  //     name: "series-1",
-  //     data: totalPrice,
-  //   },
-  // ]);
-  // const [options4] = useState({
-  //   chart: {
-  //     id: "apexchart-example",
-  //   },
-  //   xaxis: {
-  //     categories: arrProduct,
-  //   },
-  // });
+  const options2 = {
+    chart: { id: "daily-revenue-chart" },
+    xaxis: { categories: Object.keys(dailyRevenue) },
+  };
+  const series2 = [{ name: "Doanh Thu", data: Object.values(dailyRevenue) }];
 
-  // const [series4] = useState([
-  //   {
-  //     name: "series-1",
-  //     data: totalSales,
-  //   },
-  // ]);
+  const options3 = {
+    chart: { id: "product-revenue-chart" },
+    xaxis: { categories: Object.keys(productRevenue) },
+  };
+  const series3 = [{ name: "Doanh Thu", data: Object.values(productRevenue) }];
+
+  const options4 = {
+    chart: { id: "product-sales-chart" },
+    xaxis: { categories: Object.keys(productSales) },
+  };
+  const series4 = [{ name: "Số Lượng Bán", data: Object.values(productSales) }];
 
   return (
     <div>
       <div className="flex">
         <div className="w-1/2">
-          <div className="font-bold">Doanh Thu Từng Tháng</div>{" "}
-          {/* <Chart options={options1} series={series1} type="bar" height={500} />{" "} */}
+          <div className="font-bold">Doanh Thu Từng Tháng</div>
+          <Chart options={options1} series={series1} type="bar" height={500} />
         </div>
         <div className="w-1/2">
-          <div className="font-bold">Doanh Thu Từng Ngày</div>{" "}
-          {/* <Chart options={options2} series={series2} type="bar" height={500} /> */}
+          <div className="font-bold">Doanh Thu Từng Ngày</div>
+          <Chart options={options2} series={series2} type="bar" height={500} />
         </div>
       </div>
       <div className="flex">
         <div className="w-1/2">
-          <div className="font-bold">Doanh Thu Của Từng Sản Phẩm</div>{" "}
-          {/* <Chart options={options3} series={series3} type="bar" height={500} />{" "} */}
+          <div className="font-bold">Doanh Thu Của Từng Sản Phẩm</div>
+          <Chart options={options3} series={series3} type="bar" height={500} />
         </div>
         <div className="w-1/2">
-          <div className="font-bold">Số Lượng Bán Ra Của Sản Phẩm</div>{" "}
-          {/* <Chart options={options4} series={series4} type="bar" height={500} /> */}
+          <div className="font-bold">Số Lượng Bán Ra Của Sản Phẩm</div>
+          <Chart options={options4} series={series4} type="bar" height={500} />
         </div>
       </div>
-      {/* <ToastContainer /> */}
+      <ToastContainer />
     </div>
   );
 };

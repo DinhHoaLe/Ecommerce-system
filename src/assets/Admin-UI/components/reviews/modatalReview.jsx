@@ -193,6 +193,7 @@ const ModalCustomer = ({
         >
           <option value="active">Active</option>
           <option value="block">Block</option>
+          <option value="pending">Pending</option>
         </select>
       ),
     },

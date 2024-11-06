@@ -20,6 +20,7 @@ const Products = () => {
   const [dataProduct, setDataProduct] = useState([]);
   const [token, setToken] = useState("");
 
+  console.log(dataProduct)
   const openModal = (product) => {
     setIsModalOpen(true);
     setSelectedProduct(product);
@@ -414,6 +415,20 @@ const Products = () => {
         scroll={{ x: true, y: 950 }}
         // style={{ maxWidth: 1080 }}
         sticky
+        rowClassName={(record) => {
+          switch (record.status) {
+            case "available":
+              return;
+            case "out_of_stock":
+              return "bg-red-100";
+            case "discontinued":
+              return "bg-yellow-100";
+            case "pre_order":
+              return "bg-gray-100";
+            default:
+              return "";
+          }
+        }}
       />
       {isModalOpen && (
         <ModalProduct

@@ -1,13 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Form, Input, Button, Select, DatePicker, Upload, Avatar, Typography } from "antd";
+import {
+  Form,
+  Input,
+  Button,
+  Select,
+  DatePicker,
+  Upload,
+  Avatar,
+  Typography,
+} from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import moment from "moment";
 import "./ProfilePageBody.css";
 import { AdminProvider } from "../../../Admin-UI/AdminContext";
 import citiesInVietnam from "./listCity"; // Danh sách thành phố, quận/huyện
 import validator from "validator";
-import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const { Option } = Select;
 
@@ -19,7 +28,7 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
   const [gender, setGender] = useState(null);
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [idCard, setIdCard] = useState("");
-  const [newImage, setNewImage] = useState("");
+  const [newImage, setNewImage] = useState(userData.avatar);
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedWard, seclectedWard] = useState("");
   const [selectedDistrict, seclectedDistrict] = useState("");
@@ -30,7 +39,6 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
 
-  console.log(userData)
   useEffect(() => {
     if (!userData || !userData._id) {
       return;
@@ -40,7 +48,7 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
       lastName: userData.lastName,
       gender: userData.gender !== undefined ? userData.gender : null,
       dateOfBirth: userData.dateOfBirth ? moment(userData.dateOfBirth) : null,
-      idCard: userData.idCard, 
+      idCard: userData.idCard,
       number: userData.address.number,
       ward: userData.address.ward,
       district: userData.address.district,
@@ -72,6 +80,7 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
   formData.append("zipcode", zipcode);
   formData.append("password", password);
 
+  console.log(newImage);
   const getCookieValue = (name) => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -155,6 +164,8 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
           theme: "light",
         });
         setPassword("");
+        callApi();
+        form.resetFields(["currentPassword"]);
       }
     } catch (error) {
       console.log("error", error);
@@ -183,25 +194,43 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
 
   // const isValidPhone = validator.isMobilePhone(phone, "vi-VN");
 
-  // Xử lý khi chọn thành phố, cập nhật quận/huyện tương ứng
   const handleCityChange = (value) => {
     setSelectedCity(value);
     const selectedCityObj = citiesInVietnam.find(
       (city) => city.value === value
     );
     setDistricts(selectedCityObj ? selectedCityObj.districts : []);
-    form.setFieldsValue({ district: undefined, ward: undefined }); // Reset quận và phường
-    setWards([]); // Reset danh sách phường
+    form.setFieldsValue({ district: undefined, ward: undefined });
+    setWards([]);
   };
 
-  // Xử lý khi chọn quận, cập nhật danh sách phường/xã
   const handleDistrictChange = (value) => {
-    seclectedDistrict(value)
+    seclectedDistrict(value);
     const selectedDistrict = districts.find(
       (district) => district.value === value
     );
     setWards(selectedDistrict ? selectedDistrict.wards : []);
-    form.setFieldsValue({ ward: undefined }); // Reset phường khi đổi quận
+    form.setFieldsValue({ ward: undefined });
+  };
+
+  const handleDOB = (value) => {
+    const currentDate = new Date();
+    const DOB = new Date(value);
+    if (DOB > currentDate) {
+      toast.warn("DOB is incorrect!", {
+        position: "top-center",
+        autoClose: 1500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+      return;
+    } else {
+      setDateOfBirth(DOB);
+    }
   };
 
   return (
@@ -217,12 +246,16 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
     >
       {userData ? (
         <div>
-      <Typography.Title
-        level={2}
-        style={{ color: "#007BFF", textAlign: "center", marginBottom: "30px" }}
-      >
-        My Profile
-      </Typography.Title>
+          <Typography.Title
+            level={2}
+            style={{
+              color: "#007BFF",
+              textAlign: "center",
+              marginBottom: "30px",
+            }}
+          >
+            My Profile
+          </Typography.Title>
 
           <Form
             form={form}
@@ -244,7 +277,6 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
               <Upload
                 name="avatar"
                 showUploadList={false}
-                // onChange={handleImageChange}
                 style={{ marginTop: "15px" }}
                 beforeUpload={handleImageChange}
               >
@@ -316,7 +348,7 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
               >
                 <DatePicker
                   style={{ width: "100%" }}
-                  onChange={(date, dateString) => setDateOfBirth(dateString)}
+                  onChange={(date, dateString) => handleDOB(dateString)}
                 />
               </Form.Item>
             </div>
@@ -395,7 +427,11 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
                 // rules={[{ required: true, message: "Ward is required" }]}
                 style={{ width: "48%" }}
               >
-                <Select placeholder="Select Ward" disabled={wards.length === 0} onChange={(value)=>seclectedWard(value)}>
+                <Select
+                  placeholder="Select Ward"
+                  disabled={wards.length === 0}
+                  onChange={(value) => seclectedWard(value)}
+                >
                   {wards.map((ward, index) => (
                     <Option key={index} value={ward.value}>
                       {ward.name}
@@ -435,22 +471,10 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
             {/* Save and Cancel Buttons */}
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Button
-                type="default"
-                style={{
-                  width: "48%",
-                  backgroundColor: "gray",
-                  color: "white",
-                  borderRadius: "4px",
-                }}
-              >
-                Cancel
-              </Button>
-
-              <Button
                 type="primary"
                 htmlType="submit"
                 style={{
-                  width: "48%",
+                  width: "100%",
                   backgroundColor: "#4CAF50",
                   color: "white",
                   borderRadius: "4px",
@@ -464,7 +488,7 @@ function ProfilePageBody({ userData, refreshToken, callApi }) {
       ) : (
         <div>Loading</div>
       )}
-      {/* <ToastContainer /> Add ToastContainer here */}
+      {/* <ToastContainer /> */}
     </div>
   );
 }

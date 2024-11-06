@@ -46,7 +46,6 @@ const ModalCustomer = ({
     }
   };
 
-  console.log(user)
   const handleOk = async () => {
     if (user === "admin") {
       try {

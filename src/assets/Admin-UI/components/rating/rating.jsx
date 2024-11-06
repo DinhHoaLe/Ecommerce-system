@@ -14,188 +14,288 @@ import {
 } from "react-router-dom";
 
 const Rating = () => {
-  // const { dataProduct, dataReview } = useAdminContext();
-  // const [isModalOpen, setIsModalOpen] = useState(false);
-  // const [dataChanged, setDataChanged] = useState(dataProduct);
-  // const [selected, setSelected] = useState();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [dataProduct, setDataProduct] = useState([]);
+  const [newDataProduct, setNewDataProduct] = useState([]);
+  const [selected, setSelected] = useState();
+  const [token, setToken] = useState("");
 
-  // useEffect(() => {
-  //   if (dataProduct && dataProduct.length > 0) {
-  //     const dataChanged = dataProduct.map((item1) => {
-  //       const reviews = dataReview.filter(
-  //         (item2) => parseInt(item1.id) === item2.postID
-  //       );
-  //       if (reviews.length > 0) {
-  //         const totalComment = reviews.reduce((arr) => arr+1,0)
-  //         return {
-  //           ...item1,
-  //           review: [...(item1.review || []), ...reviews],
-  //           totalComment: totalComment
-  //         };
-  //       }
-  //       return item1;
-  //     });
-  //     setDataChanged(dataChanged);
-  //   }
-  // }, [dataProduct]);
+  const openModal = (product) => {
+    setIsModalOpen(true);
+    setSelected(product);
+  };
 
+  const getCookieValue = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return null;
+  };
 
-  // const filtersID = dataProduct.map((item) => ({
-  //   text: item.id.toString(),
-  //   value: item.id.toString(),
-  // }));
+  const setCookie = (name, value, days) => {
+    let expires = "";
+    if (days) {
+      const date = new Date();
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+      expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+  };
 
-  // const filtersTitle = dataProduct.map((item) => ({
-  //   text: item.title.toString(),
-  //   value: item.title.toString(),
-  // }));
+  const callRefreshToken = async (xxx) => {
+    try {
+      const req = await fetch(
+        "http://localhost:8080/api/v1/auth/refresh-token",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${xxx}`,
+          },
+        }
+      );
+      const res = await req.json();
+      const newToken = res.accessToken;
+      return newToken;
+    } catch (err) {
+      console.log("error", err);
+      return null;
+    }
+  };
 
-  // const filtersStatus = [
-  //   { text: "active", value: "active" },
-  //   { text: "block", value: "block" },
-  // ];
+  useEffect(() => {
+    const getToken = getCookieValue("token");
+    if (!getToken) {
+      toast.warn("Please log in first!", {
+        position: "top-center",
+        autoClose: 1500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+    } else {
+      setToken(getToken);
+    }
+  }, []);
 
-  // const openModal = (xxx) => {
-  //   setIsModalOpen(true);
-  //   setSelected(xxx);
-  // };
+  useEffect(() => {
+    if (token) {
+      callApi();
+    }
+  }, [token]);
 
-  // const setModal = (xxx) => {
-  //   setIsModalOpen(xxx);
-  // };
+  useEffect(() => {
+    if (dataProduct) {
+      const newArr = dataProduct.map((item) => {
+        const loop1 = item.reviewId.reduce((total, item) => {
+          return total + item.rating;
+        }, 0);
+        const loop2 = item.reviewId.reduce((total, item) => {
+          if (item.comment && item.comment !== "") return total + 1;
+        }, 0);
+        const loop3 = item.reviewId.reduce((sum, review) => {
+          if (review.reply && review.reply.statusReply === true) {
+            sum++;
+          }
+          return sum;
+        }, 0);
+        return {
+          ...item,
+          totalRating: loop1 / item.reviewId.length,
+          countRating: item.reviewId.length,
+          countComment: loop2,
+          countReply: loop3,
+        };
+      });
+      setNewDataProduct(newArr);
+    }
+  }, [dataProduct]);
 
-  // const updateData = (xxx) => {
-  //   setDataChanged(xxx);
-  // };
+  const callApi = async () => {
+    try {
+      const req = await fetch("http://localhost:8080/api/v1/products");
+      const res = await req.json();
+      const result = res.data;
+      setDataProduct(result);
+    } catch (error) {
+      console.error("error", error);
+    }
+  };
 
+  if (!dataProduct || dataProduct.length === 0) {
+    return <div>Loading...</div>;
+  }
 
-  // const menu = (record) => (
-  //   <Menu>
-  //     <Menu.Item key="0">
-  //       <button onClick={() => openModal(record)}>Edit</button>
-  //     </Menu.Item>
-  //     <Menu.Divider />
-  //     <Menu.Item key="1">
-  //       <button>Delete</button>
-  //     </Menu.Item>
-  //   </Menu>
-  // );
+  const filtersID = dataProduct.map((item) => ({
+    text: item._id.toString(),
+    value: item._id.toString(),
+  }));
 
-  // const columns = [
-  //   {
-  //     title: "ID",
-  //     dataIndex: "id",
-  //     key: "id",
-  //     filters: filtersID,
-  //     fixed: "left",
-  //     width: 100,
-  //     onFilter: (value, record) => record.id.toString().indexOf(value) === 0,
-  //     sorter: (a, b) => a.id - b.id,
-  //     render: (text, record) => <div style={{ width: 50 }}>{record.id}</div>,
-  //   },
-  //   {
-  //     title: "Title",
-  //     dataIndex: "title",
-  //     key: "title",
-  //     filters: filtersTitle,
-  //     onFilter: (value, record) => record.title.indexOf(value) === 0,
-  //     sorter: (a, b) => a.title.localeCompare(b.title),
-  //     render: (text, record) => (
-  //       <div style={{ width: 250 }}>{record.title}</div>
-  //     ),
-  //   },
-  //   {
-  //     title: "Image",
-  //     dataIndex: "image",
-  //     key: "image",
-  //     render: (text, record) => (
-  //       <div style={{ width: 100 }}>
-  //         <img
-  //           src={record.image}
-  //           alt={record.title}
-  //           style={{ width: "100px", height: "100px" }}
-  //         />
-  //       </div>
-  //     ),
-  //   },
-  //   {
-  //     title: "Rating",
-  //     dataIndex: "rating",
-  //     key: "rating",
-  //     render: (rating) => (
-  //       <div style={{ width: 70 }}>
-  //         <div>{rating.rate}</div>
-  //       </div>
-  //     ),
-  //   },
-  //   {
-  //     title: "Rating Count",
-  //     dataIndex: "rating",
-  //     key: "rating",
-  //     render: (rating) => (
-  //       <div style={{ width: 90 }}>
-  //         <div>{rating.count}</div>
-  //       </div>
-  //     ),
-  //   },
-  //   {
-  //     title: "Total Comment",
-  //     dataIndex: "Total comment",
-  //     key: "Total comment",
-  //     // width: 130,
-  //     render: (text, record) => (
-  //       <div style={{ width: 100 }}>
-  //         <div>{record.totalComment}</div>
-  //       </div>
-  //     ),
-  //   },
-  //   {
-  //     title: "Status",
-  //     key: "status",
-  //     dataIndex: "status",
-  //     filters: filtersStatus,
-  //     onFilter: (value, record) => record.status.indexOf(value) === 0,
-  //     render: (text, record) => (
-  //       <div style={{ width: 50 }}>{record.status}</div>
-  //     ),
-  //   },
-  //   {
-  //     title: "Action",
-  //     key: "operation",
-  //     fixed: "right",
-  //     width: 100,
-  //     render: (text, record) => (
-  //       <Dropdown overlay={menu(record)} trigger={["click"]}>
-  //         <a href="#">
-  //           <Space>
-  //             Action
-  //             <DownOutlined />
-  //           </Space>
-  //         </a>
-  //       </Dropdown>
-  //     ),
-  //   },
-  // ];
+  const filtersTitle = dataProduct.map((item) => ({
+    text: item.title.toString(),
+    value: item.title.toString(),
+  }));
+
+  const filtersStatus = [
+    { text: "active", value: "active" },
+    { text: "block", value: "block" },
+  ];
+
+  const menu = (record) => (
+    <Menu>
+      <Menu.Item key="0">
+        <button onClick={() => openModal(record)}>Edit</button>
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="1">
+        <button>Delete</button>
+      </Menu.Item>
+    </Menu>
+  );
+
+  const columns = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      filters: filtersID,
+      fixed: "left",
+      onFilter: (value, record) => record.id.toString().indexOf(value) === 0,
+      sorter: (a, b) => a.id - b.id,
+      render: (text, record) => <div>{record._id}</div>,
+    },
+    {
+      title: "Title",
+      dataIndex: "title",
+      key: "title",
+      filters: filtersTitle,
+      onFilter: (value, record) => record.title.indexOf(value) === 0,
+      sorter: (a, b) => a.title.localeCompare(b.title),
+      render: (text, record) => <div>{record.title}</div>,
+    },
+    {
+      title: "Image",
+      dataIndex: "image",
+      key: "image",
+      render: (text, record) => (
+        <div style={{ width: 100 }}>
+          <img
+            src={record.image}
+            alt={record.title}
+            style={{ width: "100px", height: "100px" }}
+          />
+        </div>
+      ),
+    },
+    {
+      title: "Rating",
+      dataIndex: "rating",
+      key: "rating",
+      render: (text, rating) => (
+        <div style={{ width: 70 }}>
+          <div>{rating.totalRating}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Rating Count",
+      dataIndex: "rating",
+      key: "rating",
+      render: (text, rating) => (
+        <div style={{ width: 90 }}>
+          <div>{rating.countRating}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Total Comment",
+      dataIndex: "Total comment",
+      key: "Total comment",
+      // width: 130,
+      render: (text, record) => (
+        <div style={{ width: 100 }}>
+          <div>{record.countComment}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Total Reply",
+      dataIndex: "Total comment",
+      key: "Total comment",
+      // width: 130,
+      render: (text, record) => (
+        <div style={{ width: 100 }}>
+          <div>{record.countReply}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Status",
+      key: "status",
+      dataIndex: "status",
+      filters: filtersStatus,
+      onFilter: (value, record) => record.status.indexOf(value) === 0,
+      render: (text, record) => (
+        <div style={{ width: 100 }}>{record.status}</div>
+      ),
+    },
+    {
+      title: "Action",
+      key: "operation",
+      fixed: "right",
+      width: 100,
+      render: (text, record) => (
+        <Dropdown overlay={menu(record)} trigger={["click"]}>
+          <a href="#">
+            <Space>
+              Action
+              <DownOutlined />
+            </Space>
+          </a>
+        </Dropdown>
+      ),
+    },
+  ];
 
   return (
     <div>
-      {/* <Table
+      <Table
         columns={columns}
-        dataSource={dataChanged}
+        dataSource={newDataProduct}
         rowKey="id"
         scroll={{ x: true, y: 950 }}
         // style={{ maxWidth: 1080 }}
         sticky
+        rowClassName={(record) => {
+          switch (record.status) {
+            case "available":
+              return;
+            case "out_of_stock":
+              return "bg-red-100";
+            case "discontinued":
+              return "bg-yellow-100";
+            case "pre_order":
+              return "bg-gray-100";
+            default:
+              return "";
+          }
+        }}
       />
       {isModalOpen && (
         <ModalRating
-          setModal={setModal}
+          openModal={setIsModalOpen}
           selected={selected}
-          dataNewProduct={dataChanged}
-          updateData={updateData}
+          setCookie={setCookie}
+          token={token}
+          setToken={setToken}
+          callRefreshToken={callRefreshToken}
+          callApi={callApi}
         />
       )}
-      <ToastContainer /> */}
+      <ToastContainer />
     </div>
   );
 };

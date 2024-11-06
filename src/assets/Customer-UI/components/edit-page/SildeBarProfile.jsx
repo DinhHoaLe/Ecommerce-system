@@ -9,15 +9,15 @@ function Sidebar() {
     { name: "My Authorization", value: "my-authorization" },
     { name: "My Password", value: "my-password" },
     { name: "My Orders", value: "my-order" },
+    { name: "Contact Us", value: "contact-us" },
+    { name: "My Quotes", value: "my-quotes" },
+    { name: "My Wishlist", value: "my-wishlist" },
     { name: "My Payment Options", value: "my-payment" },
-    { name: "My Purchase History", value: "purchase" },
-    { name: "My Wishlist", value: "wishlist" },
-    { name: "My Setting", value: "setting" },
+    { name: "My Purchase History", value: "my-purchase-history" },
+    { name: "My Setting", value: "my-setting" },
   ];
   const location = useLocation();
   const currentPath = location.pathname;
-
-  console.log(location);
 
   return (
     <div

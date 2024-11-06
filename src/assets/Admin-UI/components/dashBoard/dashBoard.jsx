@@ -4,11 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-function Dashboard() {
+function Dashboard({}) {
   const navigate = useNavigate();
   const [token, setToken] = useState("");
-  const [dataOrder, setDataOrder] = useState([]);
   const [dataUser, setDataUser] = useState([]);
+  const [dataOrder, setDataOrder] = useState([]);
+  const [dataSupport, setDataSupport] = useState([]);
   const [dataProduct, setDataProduct] = useState([]);
   const [dataPromotion, setDataPromotion] = useState([]);
 
@@ -71,6 +72,7 @@ function Dashboard() {
   useEffect(() => {
     if (token) {
       callApiUsers();
+      callApiQuotes();
       callApiOrders();
       callApiProducts();
       callApiPromotions();
@@ -191,6 +193,41 @@ function Dashboard() {
     }
   };
 
+  const callApiQuotes = async () => {
+    try {
+      const req1 = await fetch("http://localhost:8080/api/v1/support", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${token}`,
+        },
+      });
+      if (req1.status == 403) {
+        const newToken = await callRefreshToken(token);
+        if (!newToken) throw new Error("Please log in again!");
+        setCookie("token", newToken, 7);
+        setToken(newToken);
+        const req2 = await fetch("http://localhost:8080/api/v1/support", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${newToken}`,
+          },
+        });
+        if (req2.status === 200) {
+          const res2 = await req2.json();
+          setDataSupport(res2.data);
+        }
+      }
+      if (req1.status === 200) {
+        const res2 = await req1.json();
+        setDataSupport(res2.data);
+      }
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
+
   const callApiProducts = async () => {
     try {
       const req1 = await fetch("http://localhost:8080/api/v1/products", {
@@ -240,8 +277,6 @@ function Dashboard() {
       return b.totalBill - a.totalBill;
     });
 
-  console.log(totalBill);
-
   return (
     <div className="p-6 bg-gray-50 flex-grow overflow-auto">
       <div className="grid grid-cols-3 gap-4">
@@ -278,7 +313,7 @@ function Dashboard() {
           onClick={quotesTab}
         >
           <h3 className="text-lg font-semibold">Total Quotes</h3>
-          <p className="text-2xl font-bold">0</p>
+          <p className="text-2xl font-bold">{dataSupport.length}</p>
         </div>
         <div
           className="col-span-1 bg-white p-4 rounded-md shadow-md flex flex-col cursor-pointer"
@@ -303,7 +338,6 @@ function Dashboard() {
             </ul>
           ))}
         </div>
-    
       </div>
       {/* <ToastContainer /> */}
     </div>

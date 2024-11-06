@@ -3,10 +3,14 @@ import { Table, Modal, Dropdown, Menu, Space } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import ModalOrder from "./modalOrder";
 import { ToastContainer, toast } from "react-toastify";
+import ModalBill from "./modalBill";
+import ModalEmailOrder from "./modalEmail";
 
 const Orders = () => {
   const [selected, setSelected] = useState();
   const [modal, setModal] = useState(false);
+  const [bill, setBill] = useState(false);
+  const [modalEmail, setModalEmail] = useState(false);
   const [token, setToken] = useState("");
   const [dataOrder, setDataOrder] = useState([]);
 
@@ -27,7 +31,6 @@ const Orders = () => {
     document.cookie = name + "=" + (value || "") + expires + "; path=/";
   };
 
-  console.log(dataOrder);
   const callRefreshToken = async (xxx) => {
     try {
       const req = await fetch(
@@ -290,18 +293,34 @@ const Orders = () => {
   const menu = (record) => (
     <Menu>
       <Menu.Item key="0">
-        <button onClick={() => opdenModal(record)}>Edit</button>
+        <button onClick={() => openModal(record)}>Edit</button>
+      </Menu.Item>
+      <Menu.Item key="1">
+        <button onClick={() => openBill(record)}>Bill</button>
+      </Menu.Item>
+      <Menu.Item key="2">
+        <button onClick={() => openEmail(record)}>Mail</button>
       </Menu.Item>
       <Menu.Divider />
-      <Menu.Item key="1">
+      <Menu.Item key="3">
         <button>Delete</button>
       </Menu.Item>
     </Menu>
   );
 
-  const opdenModal = (record) => {
+  const openModal = (record) => {
     setSelected(record);
     setModal(true);
+  };
+
+  const openBill = (record) => {
+    setSelected(record);
+    setBill(true);
+  };
+
+  const openEmail = (record) => {
+    setSelected(record);
+    setModalEmail(true);
   };
 
   return (
@@ -312,8 +331,44 @@ const Orders = () => {
         rowKey={(record) => record._id}
         scroll={{ x: true, y: 950 }}
         sticky
+        rowClassName={(record) => {
+          switch (record.status) {
+            case "Waiting":
+              return "bg-gray-100";
+            case "Confirmed":
+              return "bg-red-100";
+            case "Cancelled":
+              return "bg-yellow-100";
+            default:
+              return "";
+          }
+        }}
       />
-      {modal && <ModalOrder setModal={setModal} selected={selected} />}
+      {modal && (
+        <ModalOrder
+          setModal={setModal}
+          selected={selected}
+          token={token}
+          setCookie={setCookie}
+          setToken={setToken}
+          callRefreshToken={callRefreshToken}
+          callApi={callApi}
+        />
+      )}
+      {bill && (
+        <ModalBill setBill={setBill} selected={selected} token={token} />
+      )}
+      {modalEmail && (
+        <ModalEmailOrder
+          setModalEmail={setModalEmail}
+          selected={selected}
+          token={token}
+          setCookie={setCookie}
+          setToken={setToken}
+          callRefreshToken={callRefreshToken}
+          callApi={callApi}
+        />
+      )}
       {/* <ToastContainer /> */}
     </div>
   );

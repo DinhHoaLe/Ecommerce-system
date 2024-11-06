@@ -73,7 +73,6 @@ function Authorization({ userData, refreshToken, callApi }) {
           }),
         }
       );
-
       if (req1.status === 403) {
         const req2 = await refreshToken(token);
         if (!req2) throw new Error("Please log in first!");
@@ -354,6 +353,7 @@ function Authorization({ userData, refreshToken, callApi }) {
           </Button>
         </div>
       </Form>
+      <ToastContainer />
     </div>
   );
 }

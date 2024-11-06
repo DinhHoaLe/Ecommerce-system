@@ -105,14 +105,8 @@ function LogIn() {
         body: JSON.stringify({ email, password }),
       });
 
-      const res = await req.json();
-      const accessToken = res.accessToken;
-
-      setCookie("token", accessToken, 7);
-
-      const decoded = jwtDecode(accessToken);
-
-      if (!req.status === 200) {
+      if (req.status !== 200) {
+        const res = await req.json();
         toast.warn(res.message, {
           position: "top-center",
           autoClose: 1500,
@@ -125,6 +119,13 @@ function LogIn() {
         });
         return;
       }
+
+      const res = await req.json();
+      const accessToken = res.accessToken;
+
+      setCookie("token", accessToken, 7);
+
+      const decoded = jwtDecode(accessToken);
 
       if (decoded.isEmailVerified === false) {
         toast.warn("Your email has not been verified ", {

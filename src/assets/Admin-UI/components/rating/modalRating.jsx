@@ -6,61 +6,112 @@ import { ToastContainer, toast } from "react-toastify";
 import { comment } from "postcss";
 import { key } from "localforage";
 
-const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
-  const { dataReview, callApi } = useAdminContext();
+const ModalCustomer = ({
+  dataProduct,
+  openModal,
+  selected,
+  setCookie,
+  setToken,
+  token,
+  callRefreshToken,
+  callApi,
+}) => {
   const [newStatus, setNewStatus] = useState(selected.status);
-  const [newData, setNewData] = useState();
   const [newReply, setNewReply] = useState();
 
-  console.log(newReply);
   const handleCancel = () => {
-    setModal(false);
+    openModal(false);
   };
 
   const handleOk = () => {
-    const changeStatus = dataNewProduct.map((item) => {
-      if (item.id === selected.id) {
-        return {
-          ...item,
-          status: newStatus,
-        };
-      } else {
-        return item;
-      }
-    });
-    setNewData(changeStatus);
-    updateData(changeStatus);
-    toast("Update successful!");
+    callApi();
   };
 
   const handleEdit = async (xxx) => {
     try {
-      const res = await fetch(
-        `https://66bce56424da2de7ff6c2c3e.mockapi.io/reviews/${xxx.id}`,
+      const req1 = await fetch(
+        `http://localhost:8080/api/v1/update-reviews/${xxx._id}`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
+            authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            reply: newReply,
+            text: newReply,
+            status: newStatus,
           }),
         }
       );
-      const json = await res.json();
-      console.log(json);
-      callApi();
-      toast.success("Updated successful!", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: false,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        onClose: () => setModal(false),
-      });
+      if (req1.status === 403) {
+        const res2 = await callRefreshToken(token);
+        setToken(res2);
+        setCookie("token", res2, 7);
+        const req3 = await fetch(
+          `http://localhost:8080/api/v1/update-reviews/${xxx._id}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              authorization: `Bearer ${res2}`,
+            },
+            body: JSON.stringify({
+              text: newReply,
+              status: newStatus,
+            }),
+          }
+        );
+        if (req3.status === 200) {
+          toast.success("Updated successful!", {
+            position: "top-center",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+            onClose: () => callApi(),
+          });
+        } else {
+          const res3 = await req3.json();
+          toast.warn(res3.message, {
+            position: "top-center",
+            autoClose: 1500,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+          });
+        }
+      }
+      if (req1.status === 200) {
+        toast.success("Updated successful!", {
+          position: "top-center",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: false,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          onClose: () => callApi(),
+        });
+      } else {
+        const res3 = await req1.json();
+        toast.warn(res3.message, {
+          position: "top-center",
+          autoClose: 1500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+        });
+      }
     } catch (error) {
       console.error("Error updating product:", error);
       toast.error("Failed to update product.", {
@@ -71,32 +122,81 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
 
   const handleDelete = async (xxx) => {
     try {
-      const res = await fetch(
-        `https://66bce56424da2de7ff6c2c3e.mockapi.io/reviews/${xxx.id}`,
+      const req1 = await fetch(
+        `http://localhost:8080/api/v1/reviews/${xxx._id}`,
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
+            authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            reply: newReply,
-          }),
         }
       );
-      const json = await res.json();
-      console.log(json);
-      callApi();
-      toast.success("Updated successful!", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: false,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        onClose: () => setModal(false),
-      });
+      if (req1.status === 403) {
+        const res2 = await callRefreshToken(token);
+        setToken(res2);
+        setCookie("token", res2, 7);
+        const req3 = await fetch(
+          `http://localhost:8080/api/v1/update-reviews/${xxx._id}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              authorization: `Bearer ${res2}`,
+            },
+          }
+        );
+        if (req3.status === 200) {
+          toast.success("Delete Review successful!", {
+            position: "top-center",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+            onClose: () => callApi(),
+          });
+        } else {
+          const res3 = await req3.json();
+          toast.warn(res3.message, {
+            position: "top-center",
+            autoClose: 1500,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+          });
+        }
+      }
+      if (req1.status === 200) {
+        toast.success("Delete Review successful!", {
+          position: "top-center",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: false,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          onClose: () => callApi(),
+        });
+      } else {
+        const res3 = await req1.json();
+        toast.warn(res3.message, {
+          position: "top-center",
+          autoClose: 1500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+        });
+      }
     } catch (error) {
       console.error("Error updating product:", error);
       toast.error("Failed to update product.", {
@@ -110,7 +210,7 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
       title: "ID",
       dataIndex: "id",
       key: "id",
-      render: () => selected.id,
+      render: () => selected._id,
     },
     {
       title: "Title",
@@ -131,8 +231,8 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
       dataIndex: "rating",
       key: "rating",
       render: () => (
-        <div style={{ width: 70 }}>
-          <div>{selected.rating.rate}</div>
+        <div>
+          <div>{selected.totalRating}</div>
         </div>
       ),
     },
@@ -141,19 +241,30 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
       dataIndex: "rating",
       key: "rating",
       render: () => (
-        <div style={{ width: 90 }}>
-          <div>{selected.rating.count}</div>
+        <div>
+          <div>{selected.countRating}</div>
         </div>
       ),
     },
     {
-      title: "Total Comment",
+      title: "Comment",
       dataIndex: "comment",
       key: "comment",
       width: 150,
       render: (text, record) => (
-        <div style={{ width: 70 }}>
-          <div>{selected.totalComment}</div>
+        <div>
+          <div>{selected.countComment}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Reply",
+      dataIndex: "comment",
+      key: "comment",
+      width: 150,
+      render: (text, record) => (
+        <div>
+          <div>{selected.countReply}</div>
         </div>
       ),
     },
@@ -165,7 +276,7 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
       render: () => {
         return (
           <Select
-            style={{ width: "150px" }}
+            style={{ width: "120px" }}
             value={newStatus}
             onChange={(value) => setNewStatus(value)}
           >
@@ -187,7 +298,7 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
       width: 50,
       render: (review, record) => (
         <div style={{ width: "50px" }}>
-          {selected.review.map((item, index) => (
+          {selected.reviewId.map((item, index) => (
             <div key={index} className="py-3">
               {index + 1}
             </div>
@@ -202,29 +313,24 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
       // width: 150,
       render: (review, record) => (
         <div>
-          {selected.review.map((item, index) => (
-            <input
-              key={index}
-              type="text"
-              value={item.comment}
-              disabled
-              className="py-3"
-              style={{ width: "280px" }}
-            />
+          {selected.reviewId.map((item, index) => (
+            <div className="py-3" key={index}>
+              {item.comment}
+            </div>
           ))}
         </div>
       ),
     },
     {
-      title: "Like",
-      dataIndex: "like",
-      key: "like",
+      title: "Rate",
+      dataIndex: "Rate",
+      key: "Rate",
       width: 50,
       render: (review, record) => (
         <div>
-          {selected.review.map((item, index) => (
+          {selected.reviewId.map((item, index) => (
             <div key={index} className="py-3">
-              {item.like}
+              {item.rating}
             </div>
           ))}
         </div>
@@ -237,9 +343,9 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
       width: 200,
       render: (review, record) => (
         <div>
-          {selected.review.map((item, index) => (
+          {selected.reviewId.map((item, index) => (
             <div key={index} className="py-3">
-              {item.createdAt}
+              {item.createdAt.slice(0, 10)}
             </div>
           ))}
         </div>
@@ -252,9 +358,9 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
       width: 100,
       render: (review, record) => (
         <div>
-          {selected.review.map((item, index) => (
+          {selected.reviewId.map((item, index) => (
             <div key={index} className="py-3">
-              {item.user}
+              {item.userId}
             </div>
           ))}
         </div>
@@ -267,16 +373,16 @@ const ModalCustomer = ({ dataNewProduct, setModal, selected, updateData }) => {
       width: 400,
       render: (review, record) => (
         <div>
-          {record.review.map((item, index) => (
+          {record.reviewId.map((item, index) => (
             <div key={index} style={{ marginBottom: "10px" }}>
               <input
                 type="text"
                 className="py-2"
                 style={{ width: "235px" }}
-                value={item.reply || ""}
+                value={item.reply.text || ""}
                 onChange={(e) => {
-                  const updatedReview = [...record.review];
-                  updatedReview[index].reply = e.target.value;
+                  const updatedReview = [...record.reviewId];
+                  updatedReview[index].reply.text = e.target.value;
                   setNewReply(e.target.value);
                 }}
               />

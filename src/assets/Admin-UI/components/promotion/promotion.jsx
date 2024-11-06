@@ -108,6 +108,57 @@ const Promotion = () => {
     }
   };
 
+  const deletePromotion = async (xxx) => {
+    try {
+      console.log(xxx);
+      const req1 = await fetch(
+        `http://localhost:8080/api/v1/promotion/delete-promotion/${xxx._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (req1.status === 403) {
+        const req2 = await fetch(
+          "http://localhost:8080/api/v1/auth/refresh-token",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!req2) throw new Error("Please log in again");
+        const res2 = await req2.json();
+        const newToken = res2.accessToken;
+        setToken(newToken);
+        setCookie("token", newToken, 7);
+        const req3 = await fetch(
+          `http://localhost:8080/api/v1/promotion/delete-promotion/${xxx._id}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              authorization: `Bearer ${newToken}`,
+            },
+          }
+        );
+        if (req3.status === 200) {
+          callApi();
+        }
+      }
+      if (req1.status === 200) {
+        callApi();
+      }
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
+
   const menu = (record) => (
     <Menu>
       <Menu.Item key="0">
@@ -115,7 +166,7 @@ const Promotion = () => {
       </Menu.Item>
       <Menu.Divider />
       <Menu.Item key="2">
-        <button>Delete</button>
+        <button onClick={() => deletePromotion(record)}>Delete</button>
       </Menu.Item>
     </Menu>
   );
@@ -195,7 +246,7 @@ const Promotion = () => {
       render: (text, record) => (
         <div>
           {record.applicableProducts.map((item, index) => (
-            <div key={index}>- {item.title}</div> 
+            <div key={index}>- {item.title}</div>
           ))}
         </div>
       ),
@@ -241,6 +292,18 @@ const Promotion = () => {
         // style={{ maxWidth: 1080 }}
         rowKey="id"
         sticky
+        rowClassName={(record) => {
+          switch (record.status) {
+            case "active":
+              return "bg-green-100";
+            case "inactive":
+              return "bg-gray-100";
+            case "expired":
+              return "bg-yellow-100";
+            default:
+              return "";
+          }
+        }}
       />
       {modal && (
         <ModalPromotion

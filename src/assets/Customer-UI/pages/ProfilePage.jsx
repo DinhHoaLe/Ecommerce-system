@@ -10,6 +10,11 @@ import { ToastContainer, toast } from "react-toastify";
 import ChangePassword from "../components/edit-page/ChangePassword";
 import MyOrder from "../components/edit-page/MyOrder";
 import MyPayment from "../components/edit-page/PaymentMethod";
+import MyQuotes from "../components/edit-page/MyQuotes";
+import ContactUs from "../components/edit-page/ContactUs";
+import MyPurchaseHistory from "../components/edit-page/MyPurchaseHistory";
+import MyWishList from "../components/edit-page/MyWishList";
+import MySetting from "../components/edit-page/MySetting";
 
 function ProfilePage() {
   const [token, setToken] = useState("");
@@ -119,7 +124,7 @@ function ProfilePage() {
 
   return (
     <div>
-      <Navbar />
+      <Navbar profile={user} />
       {/* Phần header */}
       <div
         className="header"
@@ -204,6 +209,56 @@ function ProfilePage() {
             path="my-payment"
             element={
               <MyPayment
+                userData={user}
+                refreshToken={refreshToken}
+                callApi={callApi}
+              />
+            }
+          />
+          <Route
+            path="my-quotes"
+            element={
+              <MyQuotes
+                userData={user}
+                refreshToken={refreshToken}
+                callApi={callApi}
+              />
+            }
+          />
+          <Route
+            path="contact-us"
+            element={
+              <ContactUs
+                userData={user}
+                refreshToken={refreshToken}
+                callApi={callApi}
+              />
+            }
+          />
+          <Route
+            path="my-purchase-history"
+            element={
+              <MyPurchaseHistory
+                userData={user}
+                refreshToken={refreshToken}
+                callApi={callApi}
+              />
+            }
+          />
+          <Route
+            path="my-wishlist"
+            element={
+              <MyWishList
+                userData={user}
+                refreshToken={refreshToken}
+                callApi={callApi}
+              />
+            }
+          />
+          <Route
+            path="my-setting"
+            element={
+              <MySetting
                 userData={user}
                 refreshToken={refreshToken}
                 callApi={callApi}
