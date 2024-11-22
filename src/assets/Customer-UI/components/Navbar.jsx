@@ -180,11 +180,15 @@ const Navbar = ({ profile }) => {
                 onMouseLeave={() => setDropDown(false)} // Ẩn dropdown khi chuột rời khỏi container
               >
                 <NavLink to="/profile">
-                  <img
-                    src={profile ? profile.avatar : TestImg}
-                    alt="Account Icon"
-                    className="h-6 w-6 cursor-pointer"
-                  />
+                  {profile ? (
+                    <img
+                      src={profile.avatar}
+                      alt="Account Icon"
+                      className="h-6 w-6 cursor-pointer"
+                    />
+                  ) : (
+                    <AccountCircleOutlinedIcon className="h-6 w-6 text-gray-600" />
+                  )}
                 </NavLink>
 
                 {dropDown && (

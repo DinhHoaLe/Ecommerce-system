@@ -23,7 +23,6 @@ function VerificationEmail() {
     const getToken = getCookieValue("token");
     if (getToken) {
       setToken(getToken);
-      // callApi(getToken);
     } else {
       toast.warn("Please log in first!", {
         position: "top-center",
